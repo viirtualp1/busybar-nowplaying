@@ -32,10 +32,10 @@ test('the front bar is the position, in pixels', () => {
   assert.equal(frame.backFill, BACK.grooveWidth / 4);
 });
 
-test('the front counts down and the back counts up', () => {
+test('both faces count elapsed time, and the back also shows duration', () => {
   const frame = buildFrame(TRACK, { nowMs: NOW });
 
-  assert.equal(frame.frontTime, '-3:00');
+  assert.equal(frame.frontTime, '1:00');
   assert.equal(frame.backElapsed, '1:00');
   assert.equal(frame.backDuration, '4:00');
 });

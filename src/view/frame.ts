@@ -3,7 +3,7 @@ import { tickerLineLooping } from 'busybar-kit/ticker';
 import { positionAt, progressOf } from '../media/position.js';
 import type { NowPlaying } from '../media/types.js';
 import { toAscii } from './ascii.js';
-import { clockOf, durationOf, remainingOf } from './format.js';
+import { clockOf, durationOf } from './format.js';
 import { BACK, BACK_CHARS, FRONT, FRONT_CHARS, fillPixels } from './layout.js';
 
 export type NowPlayingFrame = {
@@ -80,17 +80,13 @@ export function buildFrame(track: NowPlaying | null, input: FrameInput): NowPlay
   const progress = progressOf(track, nowMs);
   const title = toAscii(track.title);
   const artist = toAscii(track.artist);
-  const remaining = remainingOf(position, track.durationMs);
-
   return {
     active: true,
     paused: !track.playing,
     volume,
     frontTitle: tickerLineLooping('scroll', title, FRONT_CHARS.title, nowMs),
     frontArtist: tickerLineLooping('scroll', artist, FRONT_CHARS.artist, nowMs),
-    // With no duration there is nothing to count down to, so the front falls
-    // back to counting up — a live stream still shows how long you have been on it.
-    frontTime: remaining || clockOf(position),
+    frontTime: clockOf(position),
     frontFill: fillPixels(progress, FRONT.width),
     backTitle: tickerLineLooping('scroll', title, BACK_CHARS.panel, nowMs),
     backArtist: tickerLineLooping('scroll', artist, BACK_CHARS.panel, nowMs),

@@ -5,11 +5,10 @@ export const COLORS = {
 
   /**
    * Front: the filled part of the bar sits *behind* the text, so it has to be
-   * dark enough to read white on. It is the only colour on the front display
-   * doing work, which is why the rest of the strip stays plain.
+   * dark enough to read white on. YouTube red (#FF0000) darkened to that.
    */
-  progress: '#17263FFF',
-  progressPaused: '#1C1C1CFF',
+  progress: '#8B1515FF',
+  progressPaused: '#2A1818FF',
 
   title: '#FFFFFFFF',
   titlePaused: '#8A8A8AFF',

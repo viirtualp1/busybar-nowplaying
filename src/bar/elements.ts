@@ -198,6 +198,15 @@ export function backElements(frame: NowPlayingFrame): Element[] {
       BACK.grooveHeight,
       frame.active && frame.backFill > 0 ? COLORS.backFill : COLORS.transparent,
     ),
+    rectangle(
+      'times-bg',
+      'back',
+      BACK.panelX,
+      BACK.timesY,
+      BACK.textWidth,
+      BACK.timesHeight,
+      COLORS.panelDark,
+    ),
     text({
       id: 'back-elapsed',
       display: 'back',
@@ -206,7 +215,7 @@ export function backElements(frame: NowPlayingFrame): Element[] {
       color: COLORS.backTime,
       x: BACK.panelX,
       y: BACK.timesY,
-      width: BACK.textWidth,
+      width: BACK.timeWidth,
     }),
     text({
       id: 'back-duration',
@@ -216,7 +225,7 @@ export function backElements(frame: NowPlayingFrame): Element[] {
       color: COLORS.backTime,
       x: BACK.width - 2,
       y: BACK.timesY,
-      width: BACK.textWidth,
+      width: BACK.timeWidth,
       align: 'top_right',
     }),
     text({

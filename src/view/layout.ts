@@ -10,7 +10,7 @@ import { ART_SIZE } from '../art/index.js';
  *
  * At 72 pixels a three-minute track advances one pixel every two and a half
  * seconds, which is too slow to read as motion — so the bar carries the shape
- * of the track and the remaining time carries the ticking.
+ * of the track and the elapsed time carries the ticking.
  */
 const TIME_WIDTH = 24;
 
@@ -23,7 +23,7 @@ export const FRONT = {
   /** Text starts at x=1 and keeps a pixel on the right, so 2 off the width. */
   titleWidth: DEVICE_FRONT.width - 2,
   timeWidth: TIME_WIDTH,
-  /** Bottom row: artist on the left, remaining time hard right. */
+  /** Bottom row: artist on the left, elapsed time hard right. */
   artistWidth: DEVICE_FRONT.width - TIME_WIDTH - 3,
 } as const;
 
@@ -47,6 +47,8 @@ export const BACK = {
   grooveHeight: 5,
   grooveWidth: DEVICE_BACK.width - ART_SIZE - 8,
   timesY: 62,
+  timesHeight: 9,
+  timeWidth: TIME_WIDTH,
   sourceY: 72,
 } as const;
 
