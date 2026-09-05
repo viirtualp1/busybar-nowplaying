@@ -10,7 +10,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { RectangleElement, TextElement } from '@busy-app/busy-lib';
 import { renderBack, renderFront, type Bitmap } from 'busybar-kit/preview';
-import { blitInto, renderArtwork } from './art/index.js';
+import { renderArtwork } from './art/index.js';
 import type { Element } from './bar/elements.js';
 import { backElements, frontElements } from './bar/elements.js';
 import { loadConfig, loadEnvFile } from './config.js';
@@ -50,7 +50,7 @@ const back = renderBack(drawable(backElements(frame)));
 // The raster knows text and rectangles; an image element is a path it cannot
 // follow, so the cover is composited the way the device would show it.
 if (art) {
-  blitInto(back, art.bitmap, BACK.artX, BACK.artY);
+  back.blit(art.bitmap, BACK.artX, BACK.artY);
 }
 
 mkdirSync(outDir, { recursive: true });

@@ -1,5 +1,5 @@
-import { Bitmap } from 'busybar-kit/preview';
-import { autoContrast, ditherToShades, SHADES, toGreyTile } from './dither.js';
+import { ditherToPanel } from 'busybar-kit/image';
+import type { Bitmap } from 'busybar-kit/preview';
 import { decodeImage } from './image.js';
 
 /** The back panel is 160x80, so a square cover fills its left half exactly. */
@@ -20,27 +20,22 @@ export type RenderedArt = {
 export type ArtOptions = {
   size?: number;
   contrast?: boolean;
-  shades?: number;
 };
 
+/**
+ * Decode here, dither in the kit: the panel's 16 greys are a property of the
+ * device, but which image decoder to pay for is this app's own choice.
+ */
 export function renderArtwork(
   bytes: Buffer,
   mime: string,
   options: ArtOptions = {},
 ): RenderedArt {
-  const size = options.size ?? ART_SIZE;
   const decoded = decodeImage(bytes, mime);
-  const tile = toGreyTile(decoded, size);
-  const levelled = options.contrast === false ? tile : autoContrast(tile);
-  const shades = ditherToShades(levelled, options.shades ?? SHADES);
-  const bitmap = new Bitmap(size, size);
-
-  for (let y = 0; y < size; y += 1) {
-    for (let x = 0; x < size; x += 1) {
-      const value = shades[y * size + x] ?? 0;
-      bitmap.set(x, y, { r: value, g: value, b: value, a: 255 });
-    }
-  }
+  const bitmap = ditherToPanel(decoded, {
+    size: options.size ?? ART_SIZE,
+    ...(options.contrast === undefined ? {} : { contrast: options.contrast }),
+  });
 
   return { png: bitmap.toPng(), bitmap };
 }
@@ -88,25 +83,5 @@ export class ArtworkCache {
   clear(): void {
     this.entries.clear();
     this.slot = 0;
-  }
-}
-
-/** Draws one bitmap into another — the preview's stand-in for an image element. */
-export function blitInto(
-  target: Bitmap,
-  source: Bitmap,
-  offsetX: number,
-  offsetY: number,
-) {
-  for (let y = 0; y < source.height; y += 1) {
-    for (let x = 0; x < source.width; x += 1) {
-      const offset = (y * source.width + x) * 4;
-      target.set(offsetX + x, offsetY + y, {
-        r: source.data[offset] ?? 0,
-        g: source.data[offset + 1] ?? 0,
-        b: source.data[offset + 2] ?? 0,
-        a: 255,
-      });
-    }
   }
 }

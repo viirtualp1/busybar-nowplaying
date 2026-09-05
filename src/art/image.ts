@@ -1,12 +1,8 @@
+import type { RgbaImage } from 'busybar-kit/image';
 import jpeg from 'jpeg-js';
 import { decodePng } from './png.js';
 
-export type RgbaImage = {
-  width: number;
-  height: number;
-  /** Row-major RGBA, 8 bits per channel. */
-  data: Uint8Array;
-};
+export type { RgbaImage };
 
 /** Covers are JPEG nine times out of ten; the magic bytes settle the rest. */
 export function decodeImage(bytes: Buffer, mime = ''): RgbaImage {
