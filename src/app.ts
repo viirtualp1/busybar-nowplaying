@@ -3,10 +3,13 @@ import { ArtworkCache, renderArtwork } from './art/index.js';
 import type { BarDisplay } from './bar/display.js';
 import type { Config } from './config.js';
 import { FlashWindow } from './domain/flash.js';
+import type { BarInput, InputEvent } from './bar/input.js';
+import type { MediaControl } from './media/control.js';
+import { DoublePress } from './domain/press.js';
 import { PositionClock } from './media/position.js';
 import type { MediaSource, NowPlaying } from './media/types.js';
 import { COLORS } from './view/colors.js';
-import { buildFrame } from './view/frame.js';
+import { buildFrame, type VolumeView } from './view/frame.js';
 
 export type Logger = {
   info: (message: string) => void;
@@ -17,8 +20,13 @@ export type AppDeps = {
   config: Config;
   source: MediaSource;
   display: BarDisplay;
+  control?: MediaControl;
+  input?: BarInput;
   logger?: Logger;
 };
+
+/** How long the front strip stays with the volume after the knob stops. */
+const VOLUME_MS = 1600;
 
 const BAR_RETRY_MS = 2000;
 const REPEAT_WARNING_MS = 30_000;
@@ -28,9 +36,18 @@ export class App {
   private readonly source: MediaSource;
   private readonly display: BarDisplay;
   private readonly logger: Logger;
+  private readonly control: MediaControl | null;
+  private input: BarInput | null;
   private readonly clock = new PositionClock();
   private readonly artwork = new ArtworkCache();
   private readonly flash = new FlashWindow();
+  private readonly press = new DoublePress();
+
+  /** Knob notches waiting to be applied, coalesced into one call per tick. */
+  private encoderSteps = 0;
+  private volumeBusy = false;
+  private volume: VolumeView | null = null;
+  private volumeUntil = 0;
 
   private artFile = '';
   private artToken = 0;
@@ -46,7 +63,35 @@ export class App {
     this.config = deps.config;
     this.source = deps.source;
     this.display = deps.display;
+    this.control = deps.control ?? null;
+    this.input = deps.input ?? null;
     this.logger = deps.logger ?? console;
+  }
+
+  /** Handed the socket after construction, since it reports back into here. */
+  attachInput(input: BarInput): void {
+    this.input = input;
+  }
+
+  /**
+   * The Bar's own controls, pointed back at the player: the big button toggles,
+   * twice in a row skips, and the knob is the volume.
+   */
+  handleInput(event: InputEvent, nowMs = Date.now()): void {
+    if (event.kind === 'encoder') {
+      this.encoderSteps += event.delta;
+
+      return;
+    }
+
+    // Buttons report both edges; acting on the press is what feels immediate.
+    if (event.kind !== 'button' || event.button !== 'start' || event.action !== 'press') {
+      return;
+    }
+
+    if (this.press.press(nowMs) === 'double') {
+      void this.act('next', () => this.control?.next());
+    }
   }
 
   async start(): Promise<void> {
@@ -56,6 +101,7 @@ export class App {
     if (!this.running) {
       return;
     }
+    this.input?.start();
     this.loops = [this.sourceLoop(), this.renderLoop()];
   }
 
@@ -68,6 +114,7 @@ export class App {
       return;
     }
     this.running = false;
+    this.input?.stop();
     await Promise.allSettled(this.loops);
     await this.source.stop().catch(() => undefined);
     try {
@@ -187,6 +234,7 @@ export class App {
   private async renderLoop(): Promise<void> {
     while (this.running) {
       const now = Date.now();
+      this.settleInput(now);
       try {
         if (this.shouldBlank(now)) {
           await this.blank();
@@ -197,6 +245,7 @@ export class App {
               nowMs: now,
               artFile: this.artFile,
               ledColor: this.flash.active(now),
+              volume: this.volume,
             }),
           );
         }
@@ -209,13 +258,70 @@ export class App {
   }
 
   /**
+   * The parts of input that can only be settled by the clock: a press that
+   * nothing followed is a single, knob notches are applied in one go rather
+   * than one process per click, and the volume gives the strip back.
+   */
+  private settleInput(nowMs: number): void {
+    if (this.press.due(nowMs) === 'single') {
+      void this.act('play/pause', () => this.control?.togglePlayPause());
+    }
+
+    if (this.encoderSteps !== 0 && !this.volumeBusy) {
+      const steps = this.encoderSteps;
+      this.encoderSteps = 0;
+      this.volumeBusy = true;
+      // Shown before the call returns: the knob should feel connected to the
+      // strip even while `osascript` takes its time.
+      this.showVolume(
+        { value: this.volume?.value ?? null, direction: steps > 0 ? 'up' : 'down' },
+        nowMs,
+      );
+      void this.act('volume', async () => {
+        const value = (await this.control?.nudgeVolume(steps)) ?? null;
+        this.showVolume({ value, direction: steps > 0 ? 'up' : 'down' }, Date.now());
+      }).finally(() => {
+        this.volumeBusy = false;
+      });
+    }
+
+    if (this.volume && nowMs >= this.volumeUntil) {
+      this.volume = null;
+    }
+  }
+
+  private showVolume(view: VolumeView, nowMs: number): void {
+    this.volume = view;
+    this.volumeUntil = nowMs + VOLUME_MS;
+  }
+
+  private async act(
+    what: string,
+    action: () => Promise<void> | undefined,
+  ): Promise<void> {
+    if (!this.control) {
+      this.warnRepeated('control', `No media control for ${process.platform}`);
+
+      return;
+    }
+
+    try {
+      await action();
+    } catch (error) {
+      this.warnRepeated('control', `${what} failed: ${errorMessage(error)}`);
+    }
+  }
+
+  /**
    * Music is off most of the day, unlike a match that runs for an hour. Rather
    * than leave a frozen track on a desk object, give the screen back — and do
    * it after a pause, too, since a pause left overnight is silence.
    */
   private shouldBlank(nowMs: number) {
     const track = this.clock.current();
-    if (track?.playing) {
+    // The knob is worth waking for: turning it with nothing playing should
+    // still show what it did.
+    if (track?.playing || this.volume) {
       return false;
     }
 

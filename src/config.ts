@@ -13,6 +13,8 @@ export type Config = BarConfig & {
   idleMs: number;
   requestTimeoutMs: number;
   artContrast: boolean;
+  /** Listen to the Bar's buttons and knob. */
+  input: boolean;
 };
 
 export type LoadedConfig = {
@@ -70,6 +72,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): LoadedConfig {
         LIMITS.requestTimeoutMs,
       ),
       artContrast: flag(read('ART_CONTRAST'), true),
+      input: flag(read('INPUT'), true),
     },
   };
 }

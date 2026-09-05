@@ -2,6 +2,8 @@
 import { errorMessage } from 'busybar-kit/errors';
 import { App } from './app.js';
 import { BarDisplay, createBusyBar } from './bar/display.js';
+import { BarInput } from './bar/input.js';
+import { createControl } from './media/control.js';
 import { loadConfig, loadEnvFile } from './config.js';
 import { createSource } from './media/index.js';
 
@@ -32,7 +34,23 @@ const app = new App({
   config,
   source,
   display: new BarDisplay(bar, config.drawPriority),
+  control: createControl(),
 });
+
+if (config.input) {
+  app.attachInput(
+    new BarInput({
+      addr: config.busyAddr,
+      credential: config.busyToken || config.busyHttpPassword,
+      onEvent: (event) => {
+        app.handleInput(event);
+      },
+      onWarning: (warning) => {
+        console.warn(warning);
+      },
+    }),
+  );
+}
 
 let exiting = false;
 async function shutdown(code: number): Promise<void> {

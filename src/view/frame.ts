@@ -9,6 +9,8 @@ import { BACK, BACK_CHARS, FRONT, FRONT_CHARS, fillPixels } from './layout.js';
 export type NowPlayingFrame = {
   active: boolean;
   paused: boolean;
+  /** While the knob is turning the front strip belongs to the volume. */
+  volume: VolumeView | null;
   frontTitle: string;
   frontArtist: string;
   frontTime: string;
@@ -25,15 +27,27 @@ export type NowPlayingFrame = {
   ledColor: string | null;
 };
 
+/**
+ * What the front shows while the knob is being turned. `value` is null on a
+ * backend that can move the volume but not read it back, and then the fill is
+ * left empty rather than guessed at.
+ */
+export type VolumeView = {
+  value: number | null;
+  direction: 'up' | 'down';
+};
+
 export type FrameInput = {
   nowMs: number;
   artFile?: string;
   ledColor?: string | null;
+  volume?: VolumeView | null;
 };
 
 export const IDLE_FRAME: NowPlayingFrame = {
   active: false,
   paused: false,
+  volume: null,
   frontTitle: '',
   frontArtist: '',
   frontTime: '',
@@ -55,8 +69,10 @@ export const IDLE_FRAME: NowPlayingFrame = {
  * left out of here — and nothing that is not on screen may be put in.
  */
 export function buildFrame(track: NowPlaying | null, input: FrameInput): NowPlayingFrame {
+  const volume = input.volume ?? null;
   if (!track) {
-    return IDLE_FRAME;
+    // The knob still works with nothing playing, and is worth showing for it.
+    return volume ? { ...IDLE_FRAME, volume } : IDLE_FRAME;
   }
 
   const { nowMs } = input;
@@ -69,6 +85,7 @@ export function buildFrame(track: NowPlaying | null, input: FrameInput): NowPlay
   return {
     active: true,
     paused: !track.playing,
+    volume,
     frontTitle: tickerLineLooping('scroll', title, FRONT_CHARS.title, nowMs),
     frontArtist: tickerLineLooping('scroll', artist, FRONT_CHARS.artist, nowMs),
     // With no duration there is nothing to count down to, so the front falls

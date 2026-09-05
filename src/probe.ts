@@ -7,6 +7,7 @@
 import { writeFileSync } from 'node:fs';
 import { errorMessage } from 'busybar-kit/errors';
 import { renderArtwork } from './art/index.js';
+import { BarInput, WS_PATH, type InputEvent } from './bar/input.js';
 import { loadConfig, loadEnvFile } from './config.js';
 import { createSource } from './media/index.js';
 import { PositionClock, positionAt } from './media/position.js';
@@ -39,6 +40,28 @@ try {
 
 console.log(`busybar-nowplaying probe — source ${source.name}, every ${config.pollMs}ms`);
 
+// The Bar's own controls, printed raw. This is the first thing to run with a
+// device on the desk: it answers whether input reaches an app at all, and what
+// the switch has to be set to for it to.
+const listener = args.has('--input')
+  ? new BarInput({
+      addr: config.busyAddr,
+      credential: config.busyToken || config.busyHttpPassword,
+      onEvent: (event) => {
+        console.log(`${stamp()}  input  ${describeInput(event)}`);
+      },
+      onWarning: (warning) => {
+        console.warn(`${stamp()}  ${warning}`);
+      },
+    })
+  : null;
+listener?.start();
+if (listener) {
+  console.log(
+    `   listening on ${config.busyAddr}${WS_PATH} — press buttons, turn the knob`,
+  );
+}
+
 const clock = new PositionClock();
 let lastTrackId = '';
 let running = true;
@@ -66,18 +89,18 @@ do {
   await new Promise((resolve) => setTimeout(resolve, config.pollMs));
 } while (running);
 
+listener?.stop();
 await source.stop();
 
 function describe(track: NowPlaying | null) {
-  const stamp = new Date().toISOString().slice(11, 19);
   if (!track) {
-    return `${stamp}  —  nothing playing`;
+    return `${stamp()}  —  nothing playing`;
   }
 
   const position = positionAt(track, Date.now());
 
   return [
-    stamp,
+    stamp(),
     track.playing ? '>' : '||',
     `${track.title} — ${track.artist}`,
     `${clockOf(position)}/${durationOf(track.durationMs)}`,
@@ -106,4 +129,19 @@ async function dump(track: NowPlaying) {
   console.log(
     `   cover ${artwork.mime}, ${artwork.bytes.length} bytes → probe-art-source.${extension}, probe-art-bar.png`,
   );
+}
+
+function stamp() {
+  return new Date().toISOString().slice(11, 19);
+}
+
+function describeInput(event: InputEvent) {
+  if (event.kind === 'button') {
+    return `${event.button} ${event.action}`;
+  }
+  if (event.kind === 'encoder') {
+    return `knob ${event.delta > 0 ? '+' : ''}${event.delta}`;
+  }
+
+  return `switch → ${event.position}`;
 }

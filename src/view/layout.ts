@@ -18,6 +18,8 @@ export const FRONT = {
   ...DEVICE_FRONT,
   titleY: 2,
   bottomY: 10,
+  /** The bold volume reading, sitting across both rows. */
+  volumeY: 3,
   /** Text starts at x=1 and keeps a pixel on the right, so 2 off the width. */
   titleWidth: DEVICE_FRONT.width - 2,
   timeWidth: TIME_WIDTH,

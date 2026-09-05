@@ -18,6 +18,9 @@ export const COLORS = {
   time: '#9AA0A6FF',
   timePaused: '#5F6368FF',
 
+  /** The volume bar, brighter than the track's: it is a deliberate action. */
+  volume: '#2E4A7DFF',
+
   /** A short blue blink on a new track, and nothing else — songs are frequent. */
   ledTrack: '#2B7FFFFF',
 

@@ -13,6 +13,9 @@ YouTube Music in a browser, Spotify and Apple Music all work the same way.
 
 - **Front** — a progress bar behind the title, with artist and time remaining
 - **Back** — 80×80 album cover, title, artist, album, progress and source app
+- **The Bar's own controls drive the player** — the big START button plays and
+  pauses, twice in a row skips to the next track, and the knob is the volume
+  (the front strip becomes the volume bar while you turn it)
 - Blue LED blink on a new track
 - The display is handed back after a minute of silence
 - Non-ASCII titles are transliterated, since the device fonts are ASCII only
@@ -55,6 +58,7 @@ All optional; the defaults assume a Bar on USB.
 | `FRAME_MS`           | `200`   | Redraw rate                                                 |
 | `IDLE_MS`            | `60000` | Silence before the display is handed back                   |
 | `ART_CONTRAST`       | `1`     | Stretch the cover's contrast before dithering               |
+| `INPUT`              | `1`     | Listen to the Bar's buttons and knob                        |
 | `REQUEST_TIMEOUT_MS` | `10000` | Bar request timeout                                         |
 
 ## Known limits
@@ -65,5 +69,8 @@ All optional; the defaults assume a Bar on USB.
 - `nowplaying-cli` uses a private Apple framework and a macOS update can break
   it. If `npm run probe` shows nothing while music plays, check that first.
 - On Windows every player is in the session list at once; `MEDIA_APP` picks one.
+- The button and knob handling is written against the Bar's documented input
+  events but has not been run against the hardware yet. `npm run probe -- --input`
+  prints them raw.
 
 Built on [busybar-kit](https://github.com/viirtualp1/busybar-kit).

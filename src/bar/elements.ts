@@ -1,6 +1,6 @@
 import type { ImageElement, RectangleElement, TextElement } from '@busy-app/busy-lib';
 import { COLORS } from '../view/colors.js';
-import type { NowPlayingFrame } from '../view/frame.js';
+import type { NowPlayingFrame, VolumeView } from '../view/frame.js';
 import { BACK, FRONT } from '../view/layout.js';
 
 export type Element = TextElement | RectangleElement | ImageElement;
@@ -10,6 +10,9 @@ export type Element = TextElement | RectangleElement | ImageElement;
  * first because elements paint in array order.
  */
 export function frontElements(frame: NowPlayingFrame): Element[] {
+  if (frame.volume) {
+    return volumeElements(frame.volume);
+  }
   const filled = frame.frontFill > 0 && frame.active;
 
   return [
@@ -52,6 +55,62 @@ export function frontElements(frame: NowPlayingFrame): Element[] {
       value: frame.frontTime,
       font: 'tiny',
       color: frame.paused ? COLORS.timePaused : COLORS.time,
+      x: FRONT.width - 1,
+      y: FRONT.bottomY,
+      width: FRONT.timeWidth,
+      align: 'top_right',
+    }),
+  ];
+}
+
+/**
+ * Turning the knob hands the front strip over, the way the ticker takes the
+ * bottom row in the Dota app: the bar *is* the volume for a moment, then gives
+ * the track back. Same element ids, so nothing has to be cleared in between.
+ */
+function volumeElements(volume: VolumeView): Element[] {
+  const value = volume.value;
+
+  return [
+    rectangle(
+      'progress',
+      'front',
+      0,
+      0,
+      value === null ? 1 : Math.max(1, Math.round((value / 100) * FRONT.width)),
+      FRONT.height,
+      value === null ? COLORS.transparent : COLORS.volume,
+    ),
+    text({
+      id: 'title',
+      display: 'front',
+      value: value === null ? 'VOL' : String(value),
+      font: 'bold',
+      color: COLORS.title,
+      x: 2,
+      // Bold is twice the height of the small font, so it stands across both
+      // rows: the label goes beside it rather than under it.
+      y: FRONT.volumeY,
+      width: FRONT.titleWidth,
+    }),
+    text({
+      id: 'artist',
+      display: 'front',
+      // With no reading to show, the direction is the whole message.
+      value: value === null ? (volume.direction === 'up' ? 'UP' : 'DOWN') : 'VOLUME',
+      font: 'tiny',
+      color: COLORS.artist,
+      x: FRONT.width - 1,
+      y: FRONT.bottomY,
+      width: FRONT.artistWidth,
+      align: 'top_right',
+    }),
+    text({
+      id: 'time',
+      display: 'front',
+      value: '',
+      font: 'tiny',
+      color: COLORS.transparent,
       x: FRONT.width - 1,
       y: FRONT.bottomY,
       width: FRONT.timeWidth,
