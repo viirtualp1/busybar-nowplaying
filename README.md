@@ -74,14 +74,24 @@ npm run shot -- --fixture
 
 ## How it works
 
-**The position has to be interpolated.** Neither backend runs a clock. macOS
-reports "the position was 78.2s, as of this timestamp"; Windows reports a
-position sampled whenever SMTC last pushed. Rendering either one straight gives
-a progress bar that jumps a second at a time and, on a track nobody has touched
-for three minutes, is simply wrong. So the app anchors on `(position, sampled
-at, rate)` and runs the clock locally — `PositionClock` re-anchors only when a
-report is more than 1.5s from its own estimate, which is a seek, a pause or a
-new track rather than drift.
+**The position has to be interpolated, and sometimes invented.** Neither backend
+runs a clock. Rendering the reported position straight gives a progress bar that
+jumps a second at a time — and with a browser it gives one that never moves at
+all.
+
+Measured on macOS 26 with YouTube Music in Chrome: `elapsedTime` is published
+once as **0**, with no timestamp, and is never refreshed — not on a seek, not
+even across a pause. `playbackRate` is the one field that stays honest (1 while
+playing, 0 while paused). A native player publishes a real position; a browser
+does not.
+
+So `PositionClock` re-anchors on the _report moving_, not on the report
+disagreeing: a backend that keeps repeating the same number is left to one side
+and the clock counts on its own. That means with a browser the elapsed time is
+counted from **when this app first saw the track** — exact for a track that
+starts while it is running, and off by however far in you were if you start the
+app mid-song. A backend that does publish a moving position (SMTC, native
+players) stays in charge, and a real seek still re-anchors.
 
 **The cover is dithered here, not on the device.** The Bar quantises an uploaded
 image to its 16 greys, and a plain nearest-level mapping turns every gradient
@@ -102,19 +112,19 @@ appears to change.
 
 Everything is optional; the defaults assume a Bar on USB and no filtering.
 
-| Variable                      | Default | What it does                                                        |
-| ----------------------------- | ------- | ------------------------------------------------------------------- |
-| `BUSY_ADDR`                   | USB     | Bar address; `https://api.busy.app` for cloud                       |
-| `BUSY_HTTP_PASSWORD`          | —       | Wi-Fi only (Bar web UI → Network → HTTP API access)                 |
-| `BUSY_TOKEN`                  | —       | Cloud only                                                          |
-| `DRAW_PRIORITY`               | `40`    | How hard to fight other apps for the screen                         |
-| `MEDIA_SOURCE`                | `auto`  | `auto`, `macos`, `windows`                                          |
-| `MEDIA_APP`                   | —       | Only follow players matching this, e.g. `chrome`, `spotify`         |
-| `POLL_MS`                     | `1000`  | How often the backend is asked; between reads the position is local |
-| `FRAME_MS`                    | `200`   | Redraw rate                                                         |
-| `IDLE_MS`                     | `60000` | Silence before the display is handed back                           |
-| `ART_CONTRAST`                | `1`     | Stretch the cover's histogram before dithering                      |
-| `REQUEST_TIMEOUT_MS`          | `10000` | Bar request timeout                                                 |
+| Variable             | Default | What it does                                                        |
+| -------------------- | ------- | ------------------------------------------------------------------- |
+| `BUSY_ADDR`          | USB     | Bar address; `https://api.busy.app` for cloud                       |
+| `BUSY_HTTP_PASSWORD` | —       | Wi-Fi only (Bar web UI → Network → HTTP API access)                 |
+| `BUSY_TOKEN`         | —       | Cloud only                                                          |
+| `DRAW_PRIORITY`      | `40`    | How hard to fight other apps for the screen                         |
+| `MEDIA_SOURCE`       | `auto`  | `auto`, `macos`, `windows`                                          |
+| `MEDIA_APP`          | —       | Only follow players matching this, e.g. `chrome`, `spotify`         |
+| `POLL_MS`            | `1000`  | How often the backend is asked; between reads the position is local |
+| `FRAME_MS`           | `200`   | Redraw rate                                                         |
+| `IDLE_MS`            | `60000` | Silence before the display is handed back                           |
+| `ART_CONTRAST`       | `1`     | Stretch the cover's histogram before dithering                      |
+| `REQUEST_TIMEOUT_MS` | `10000` | Bar request timeout                                                 |
 
 ## Notes
 

@@ -3,4 +3,5 @@ dist/
 .env
 *.png
 !docs/*.png
+probe-art-*
 .DS_Store

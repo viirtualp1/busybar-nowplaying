@@ -16,6 +16,9 @@ const FIELDS = [
   'elapsedTime',
   'playbackRate',
   'timestamp',
+  // A browser publishes only the *client* id — and for a Chrome PWA that id
+  // carries which web app it is. `bundleIdentifier` is what native players set.
+  'clientBundleIdentifier',
   'bundleIdentifier',
 ] as const;
 
@@ -98,7 +101,7 @@ export function parseNowPlaying(stdout: string, nowMs: number): NowPlaying | nul
 
   const album = text(raw['album']);
   const rate = number(raw['playbackRate']) ?? 0;
-  const app = text(raw['bundleIdentifier']);
+  const app = text(raw['clientBundleIdentifier']) || text(raw['bundleIdentifier']);
 
   return {
     trackId: trackKey(title, artist, album),

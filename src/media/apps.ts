@@ -18,6 +18,9 @@ const KNOWN: Record<string, string> = {
   'company.thebrowser.browser': 'Arc',
   'com.github.th-ch.youtube-music': 'YouTube Music',
   'app.ytmdesktop.ytmdesktop': 'YouTube Music',
+  // Chrome derives a PWA's id from its start URL, so this one is the same on
+  // every machine that installs music.youtube.com as an app.
+  cinhimbnkkaeohfgghhklpknlkffjgod: 'YouTube Music',
   'chrome.exe': 'Chrome',
   'msedge.exe': 'Edge',
   'firefox.exe': 'Firefox',
@@ -33,6 +36,16 @@ export function appLabelFor(id: string): string {
   const known = KNOWN[key];
   if (known) {
     return known;
+  }
+
+  // A web app installed through Chrome reports `com.google.Chrome.app.<id>`.
+  // Name the web app when we know it, and fall back to the browser — "Chrome"
+  // is at least true, where the raw hash is noise.
+  const installed = /^(.*)\.app\.([a-p]{32})$/.exec(key);
+  if (installed) {
+    const [, browser = '', app = ''] = installed;
+
+    return KNOWN[app] ?? KNOWN[browser] ?? prettify(browser);
   }
 
   if (key.includes('youtube') && key.includes('music')) {

@@ -35,6 +35,7 @@ export class App {
   private artFile = '';
   private artToken = 0;
   private lastTrackId = '';
+  private notedFreeRun = false;
   private activeAt = Date.now();
   private blanked = false;
   private running = false;
@@ -108,6 +109,7 @@ export class App {
         const track = this.clock.update(await this.source.read(), Date.now());
         this.warnings.delete('source');
         this.onTrack(track);
+        this.noteFreeRunning(track);
       } catch (error) {
         this.warnRepeated('source', `${this.source.name}: ${errorMessage(error)}`);
       }
@@ -140,6 +142,21 @@ export class App {
     if (!cached) {
       void this.loadArt(track);
     }
+  }
+
+  /**
+   * Worth saying out loud once: a browser publishes a position it then never
+   * updates, so the elapsed time is counted from when this app saw the track
+   * rather than read from the player.
+   */
+  private noteFreeRunning(track: NowPlaying | null): void {
+    if (!this.clock.isFreeRunning || this.notedFreeRun) {
+      return;
+    }
+    this.notedFreeRun = true;
+    this.logger.info(
+      `${track?.appLabel || 'This player'} publishes no playback position — counting locally from where the track was first seen`,
+    );
   }
 
   /**
