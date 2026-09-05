@@ -1,0 +1,62 @@
+{
+  "name": "busybar-nowplaying",
+  "version": "1.0.0",
+  "description": "Now playing on a BUSY Bar: the track progress on the front, dithered album art on the back",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "busybar-nowplaying": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    ".env.example"
+  ],
+  "keywords": [
+    "busy-bar",
+    "busybar",
+    "now-playing",
+    "youtube-music",
+    "media-session",
+    "dither",
+    "led"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "npm run clean && tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --import tsx --test \"test/**/*.test.ts\"",
+    "check": "npm run lint && npm run typecheck && npm test",
+    "dev": "tsx src/index.ts",
+    "probe": "tsx src/probe.ts",
+    "shot": "tsx src/preview.ts",
+    "start": "npm run build && node dist/index.js",
+    "prepublishOnly": "npm run check && npm run build"
+  },
+  "dependencies": {
+    "@busy-app/busy-lib": "^0.18.0",
+    "busybar-kit": "^0.1.0",
+    "jpeg-js": "^0.4.4"
+  },
+  "optionalDependencies": {
+    "windows-media-sessions": "^1.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.3",
+    "eslint": "^10.8.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.67.0"
+  }
+}
