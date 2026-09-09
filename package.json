@@ -3,6 +3,15 @@
   "version": "1.0.0",
   "description": "Now playing on a BUSY Bar: the track progress on the front, dithered album art on the back",
   "license": "MIT",
+  "author": "viirtualp1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/viirtualp1/busybar-nowplaying.git"
+  },
+  "bugs": {
+    "url": "https://github.com/viirtualp1/busybar-nowplaying/issues"
+  },
+  "homepage": "https://github.com/viirtualp1/busybar-nowplaying#readme",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -11,6 +20,7 @@
   "files": [
     "dist",
     "README.md",
+    "LICENSE",
     ".env.example"
   ],
   "keywords": [
@@ -43,7 +53,7 @@
   },
   "dependencies": {
     "@busy-app/busy-lib": "^0.18.0",
-    "busybar-kit": "^0.2.0",
+    "busybar-kit": "^1.0.0",
     "jpeg-js": "^0.4.4"
   },
   "optionalDependencies": {

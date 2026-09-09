@@ -57,14 +57,13 @@ test('back elapsed and duration sit in their own slots, not one shared box', () 
   const elapsed = backElements(frame).find((element) => element.id === 'back-elapsed');
   const duration = backElements(frame).find((element) => element.id === 'back-duration');
 
-  assert.equal(elapsed?.type === 'text' && elapsed.width, BACK.timeWidth);
-  assert.equal(duration?.type === 'text' && duration.width, BACK.timeWidth);
+  assert.ok(elapsed?.type === 'text' && duration?.type === 'text', 'both are drawn');
+  assert.equal(elapsed.width, BACK.timeWidth);
+  assert.equal(duration.width, BACK.timeWidth);
+  // `width` is optional on a text element, so the arithmetic has to say what it
+  // means by a missing one rather than trust it is there.
   assert.ok(
-    elapsed &&
-      duration &&
-      elapsed.type === 'text' &&
-      duration.type === 'text' &&
-      elapsed.x + elapsed.width <= duration.x - duration.width,
+    elapsed.x + (elapsed.width ?? 0) <= duration.x - (duration.width ?? 0),
     'the two clocks must not share pixels',
   );
 });
