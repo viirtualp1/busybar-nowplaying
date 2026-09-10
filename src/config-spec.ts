@@ -8,6 +8,7 @@ export default defineConfigSpec({
       kind: 'env',
       file: '.env',
       title: 'Settings',
+      reloads: 'restart',
       fields: [
         {
           key: 'MEDIA_SOURCE',
@@ -46,14 +47,14 @@ export default defineConfigSpec({
           label: 'Silence before the screen is given back',
           type: 'number',
           advanced: true,
-          validate: integerIn(1000, 3_600_000),
+          rules: [integerIn(1000, 3_600_000)],
         },
         {
           key: 'POLL_MS',
           label: 'How often the player is read',
           type: 'number',
           advanced: true,
-          validate: integerIn(100, 60_000),
+          rules: [integerIn(100, 60_000)],
         },
       ],
     },
